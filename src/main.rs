@@ -28,6 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut funct3;
     let mut funct7 : u64;
     let mut imm : i64;
+    let mut shamt : i64;
 
     // 何か
     let mut mem_addr : usize;
@@ -97,30 +98,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 rd      = (instr as usize >> 7) & 0b11111;
                 funct3  = (instr >> 12) & 0b111;
                 rs1     = (instr as usize >> 15) & 0b11111;
-                imm     = (instr as i64) >> 20;
-                /*
+                imm     = ((instr as i32) >> 20) as i64;
                 match funct3 {
                     // ADDI
-                    0b000 => regfile[rd] = regfile[rs1] + imm,
+                    0b000 => regfile[rd] = ((regfile[rs1] as i64) + imm) as u64,
                     // SLTI
-                    0b010 => regfile[rd] = regfile[rs1] as i64 < imm,
+                    0b010 => regfile[rd] = ((regfile[rs1] as i64) < imm) as u64,
                     // SLTIU
-                    0b011 => regfile[rd] = regfile[rs1] < (imm as u64),
+                    0b011 => regfile[rd] = (regfile[rs1] < (imm as u64)) as u64,
                     // XORI
-                    0b100 => regfile[rd] = regfile[rs1] ^ imm,
+                    0b100 => regfile[rd] = regfile[rs1] ^ imm as u64,
                     // ORI
-                    0b110 => regfile[rd] = regfile[rs1] | imm,
+                    0b110 => regfile[rd] = regfile[rs1] | imm as u64,
                     // ANDI
-                    0b111 => regfile[rd] = regfile[rs1] & imm,
+                    0b111 => regfile[rd] = regfile[rs1] & imm as u64,
                     // SLLI
                     0b001 => regfile[rd] = regfile[rs1] << imm,
                     0b101 => {
-                        // SRLI
-
-                        // SRAI
+                        shamt = imm & 0b11111;
+                        match imm >> 5 {
+                            // SRLI
+                            0b0000000 => regfile[rd] = regfile[rs1] >> shamt,
+                            // SRAI
+                            0b0100000 => regfile[rd] = ((regfile[rs1] as i64) >> shamt) as u64,
+                            _ => {},
+                        }
                     },
+                    _ => {},
                 }
-                */
             },
             // AUIPC
             0b00_101_11 => {
@@ -133,7 +138,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 funct3  = (instr >> 12) & 0b111;
                 rs1     = (instr as usize >> 15) & 0b11111;
                 rs2     = (instr as usize >> 20) & 0b11111;
-                imm     = (((instr as i64) >> 25) << 5) | ((instr as i64>> 7) & 0b11111);
+                imm     = ((((instr as i32) >> 25) << 5) | ((instr as i32 >> 7) & 0b11111)) as i64;
                 mem_addr = (imm + regfile[rs1] as i64) as usize;
                 println!("STORE : rs1 = {:x}, funct3 = {:x}, mem_addr = {:x}, rs2 = {:x}", rs1, funct3, mem_addr, rs2);
                 match funct3 {
