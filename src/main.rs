@@ -199,6 +199,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             // OP
             0b01_100_11 => {
+                rd      = (instr as usize >> 7) & 0b11111;
+                funct3  = (instr >> 12) & 0b111;
+                rs1     = (instr as usize >> 15) & 0b11111;
+                rs2     = (instr as usize >> 20) & 0b11111;
+                match funct3 {
+                    0b000 => {
+                        match instr >> 25 {
+                            // ADD
+                            0b0000000 => regfile[rd] = regfile[rs1] + regfile[rs2],
+                            // SUB
+                            0b0100000 => regfile[rd] = regfile[rs1] - regfile[rs2],
+                            _ => {},
+                        }
+                    },
+                    // SLL
+                    0b001 => regfile[rd] = regfile[rs1] << regfile[rs2],
+                    // SLT
+                    0b010 => regfile[rd] = ((regfile[rs1] as i64) < (regfile[rs2] as i64)) as u64,
+                    // SLTU
+                    0b011 => regfile[rd] = ((regfile[rs1] as u64) < (regfile[rs2] as u64)) as u64,
+                    // XOR
+                    0b100 => regfile[rd] = regfile[rs1] | regfile[rs2],
+                    0b101 => {
+                        match instr >> 25 {
+                            // SRL
+                            0b0000000 => regfile[rd] = regfile[rs1] >> regfile[rs2],
+                            // SRA
+                            0b0100000 => regfile[rd] = ((regfile[rs1] as i64) >> (regfile[rs2] as i64)) as u64,
+                            _ => {},
+                        }
+                    },
+                    // OR
+                    0b110 => regfile[rd] = regfile[rs1] | regfile[rs2],
+                    // AND
+                    0b111 => regfile[rd] = regfile[rs1] & regfile[rs2],
+                    _ => {},
+                }
             },
             // LUI
             0b01_101_11 => {
