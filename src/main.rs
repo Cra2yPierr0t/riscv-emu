@@ -245,6 +245,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             // OP-32
             0b01_110_11 => {
+                rd      = (instr as usize >> 7) & 0b11111;
+                rs1     = (instr as usize >> 15) & 0b11111;
+                rs2     = (instr as usize >> 20) & 0b11111;
+                funct3  = (instr >> 12) & 0b111;
+                match funct3 {
+                    // ADDW
+                    0b000 => {
+                        match instr >> 25 {
+                            // ADDW
+                            0b0000000 => regfile[rd] = (((regfile[rs1] + regfile[rs2]) as i32) as i64) as u64,
+                            // SUBW
+                            0b0100000 => regfile[rd] = (((regfile[rs1] - regfile[rs2]) as i32) as i64) as u64,
+                            _ => {},
+                        }
+                    },
+                    // SLLW
+                    0b001 => regfile[rd] = ((regfile[rs1] as u32) << (regfile[rs2] as u32)) as u64,
+                    0b101 => {
+                        match instr >> 25 {
+                            // SRLW
+                            0b0000000 => regfile[rd] = ((regfile[rs1] as u32) >> (regfile[rs2] as u32)) as u64, 
+                            // SRAW
+                            0b0100000 => regfile[rd] = ((regfile[rs1] as i32) >> (regfile[rs2] as i32)) as u64,
+                            _ => {},
+                        }
+                    },
+                    _ => {},
+                }
             },
             // BRANCH
             0b11_000_11 => {
