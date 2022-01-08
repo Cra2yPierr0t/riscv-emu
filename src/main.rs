@@ -33,15 +33,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 何か
     let mut mem_addr : usize;
 
-    memory[0x20] = 0xff;
-    memory[0x21] = 0xff;
-    memory[0x22] = 0xff;
-    memory[0x23] = 0xff;
-    memory[0x24] = 0xff;
-    memory[0x25] = 0xff;
-    memory[0x26] = 0xff;
-    memory[0x27] = 0xff;
-
     loop {
         // 命令フェッチ
         instr = ((memory[pc + 3] as u32) << (8*3)) | 
@@ -282,6 +273,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             // JAL
             0b11_011_11 => {
+                rd      = (instr as usize >> 7) & 0b11111;
+                imm     = ((instr & 0xff000) as i32 | ((instr & 0x100000) >> 9) as i32 | ((instr & 0x7fe00000) >> 20) as i32 | (((instr & 0x80000000) as i32) >> 12)) as i64;
+                regfile[rd] = pc as u64 + 4;
+                pc = (pc as i64 + imm) as usize;
             },
             // SYSTEM
             0b11_100_11 => {
