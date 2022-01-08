@@ -270,6 +270,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             // JALR
             0b11_001_11 => {
+                rd      = (instr as usize >> 7) & 0b11111;
+                funct3  = (instr >> 12) & 0b111;
+                rs1     = (instr as usize >> 15) & 0b11111;
+                imm     = ((instr as i32) >> 20) as i64;
+                if funct3 == 0b000 {
+                    regfile[rd] = pc as u64 + 4;
+                    pc = (regfile[rs1] + imm as u64) as usize;
+                } else {
+                }
             },
             // JAL
             0b11_011_11 => {
