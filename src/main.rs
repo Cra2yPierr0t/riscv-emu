@@ -115,12 +115,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // SLLI
                     0b001 => regfile[rd] = regfile[rs1] << imm,
                     0b101 => {
-                        shamt = imm & 0b11111;
-                        match imm >> 5 {
+                        shamt = imm & 0b111111;
+                        match imm >> 6 {
                             // SRLI
-                            0b0000000 => regfile[rd] = regfile[rs1] >> shamt,
+                            0b000000 => regfile[rd] = regfile[rs1] >> shamt,
                             // SRAI
-                            0b0100000 => regfile[rd] = ((regfile[rs1] as i64) >> shamt) as u64,
+                            0b010000 => regfile[rd] = ((regfile[rs1] as i64) >> shamt) as u64,
                             _ => {},
                         }
                     },
@@ -129,9 +129,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             // AUIPC
             0b00_101_11 => {
+                rd      = (instr as usize >> 7) & 0b11111;
+                imm     = ((instr as i32) & 0xffff000) as i64;
+                regfile[rd] = (imm + pc as i64) as u64;
             },
             // OP-IMM-32
             0b00_110_11 => {
+                rd      = (instr as usize >> 7) & 0b11111;
+                funct3  = (instr >> 12) & 0b111;
+                rs1     = (instr as usize >> 15) & 0b11111;
+                imm     = ((instr as i32) >> 20) as i64;
+                match funct3 {
+                    // ADDIW
+                    0b000 => regfile[rd] = ((((regfile[rs1] as i64) + imm) as u32) as i64) as u64,
+                    // SLLIW
+                    0b001 => regfile[rd] = ((regfile[rs1] << imm) as u32) as u64,
+                    0b101 => {
+                        shamt = imm & 0b11111;
+                        match imm >> 5 {
+                            // SRLWI
+                            0b0000000 => regfile[rd] = ((regfile[rs1] >> shamt) as u32) as u64,
+                            // SRAWI
+                            0b0100000 => regfile[rd] = (((regfile[rs1] as i64) >> shamt) as u32) as u64,
+                            _ => {},
+                        }
+                    },
+                    _ => {},
+                }
             },
             // STORE
             0b01_000_11 => {
@@ -178,6 +202,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             // LUI
             0b01_101_11 => {
+                rd      = (instr as usize >> 7) & 0b11111;
+                imm     = ((instr as i32) & 0xffff000) as i64;
+                regfile[rd] = imm as u64;
             },
             // OP-32
             0b01_110_11 => {
