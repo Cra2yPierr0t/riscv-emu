@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rs1 : usize;
     let mut rs2 : usize;
     let mut funct3;
-    let mut funct7 : u64;
+    let mut funct7;
     let mut imm : i64;
     let mut shamt : i64;
 
@@ -192,39 +192,62 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             0b01_100_11 => {
                 rd      = (instr as usize >> 7) & 0b11111;
                 funct3  = (instr >> 12) & 0b111;
+                funct7  = (instr >> 25) & 0x7f;
                 rs1     = (instr as usize >> 15) & 0b11111;
                 rs2     = (instr as usize >> 20) & 0b11111;
-                match funct3 {
-                    0b000 => {
-                        match instr >> 25 {
+                match funct7 {
+                    0b00000000 => {
+                        match funct3 {
                             // ADD
-                            0b0000000 => regfile[rd] = regfile[rs1] + regfile[rs2],
-                            // SUB
-                            0b0100000 => regfile[rd] = regfile[rs1] - regfile[rs2],
-                            _ => {},
-                        }
-                    },
-                    // SLL
-                    0b001 => regfile[rd] = regfile[rs1] << regfile[rs2],
-                    // SLT
-                    0b010 => regfile[rd] = ((regfile[rs1] as i64) < (regfile[rs2] as i64)) as u64,
-                    // SLTU
-                    0b011 => regfile[rd] = ((regfile[rs1] as u64) < (regfile[rs2] as u64)) as u64,
-                    // XOR
-                    0b100 => regfile[rd] = regfile[rs1] | regfile[rs2],
-                    0b101 => {
-                        match instr >> 25 {
+                            0b000 => regfile[rd] = regfile[rs1] + regfile[rs2],
+                            // SLL
+                            0b001 => regfile[rd] = regfile[rs1] << regfile[rs2],
+                            // SLT
+                            0b010 => regfile[rd] = ((regfile[rs1] as i64) < (regfile[rs2] as i64)) as u64,
+                            // SLTU
+                            0b011 => regfile[rd] = ((regfile[rs1] as u64) < (regfile[rs2] as u64)) as u64,
+                            // XOR
+                            0b100 => regfile[rd] = regfile[rs1] | regfile[rs2],
                             // SRL
-                            0b0000000 => regfile[rd] = regfile[rs1] >> regfile[rs2],
-                            // SRA
-                            0b0100000 => regfile[rd] = ((regfile[rs1] as i64) >> (regfile[rs2] as i64)) as u64,
+                            0b101 => regfile[rd] = regfile[rs1] >> regfile[rs2],
+                            // OR
+                            0b110 => regfile[rd] = regfile[rs1] | regfile[rs2],
+                            // AND
+                            0b111 => regfile[rd] = regfile[rs1] & regfile[rs2],
                             _ => {},
                         }
                     },
-                    // OR
-                    0b110 => regfile[rd] = regfile[rs1] | regfile[rs2],
-                    // AND
-                    0b111 => regfile[rd] = regfile[rs1] & regfile[rs2],
+                    0b01000000 => {
+                        match funct3 {
+                            // SUB
+                            0b000 => regfile[rd] = regfile[rs1] - regfile[rs2],
+                            // SRA
+                            0b101 => regfile[rd] = ((regfile[rs1] as i64) >> (regfile[rs2] as i64)) as u64,
+                            _ => {},
+                        }
+                    },
+                    // M Extension
+                    0b0000001 => {
+                        match funct3 {
+                            // MUL
+                            0b000 => regfile[rd] = (((regfile[rs1] as i64) as i128) * ((regfile[rs2] as i64) as i128)) as u64,
+                            // MULH
+                            0b001 => regfile[rd] = ((((regfile[rs1] as i64) as i128) * ((regfile[rs2] as i64) as i128)) >> 64) as u64,
+                            // MULHSU
+                            0b010 => regfile[rd] = ((((regfile[rs1] as i64) as i128) * (regfile[rs2] as i128)) >> 64) as u64,
+                            // MULHU
+                            0b011 => regfile[rd] = (((regfile[rs1] as u128) * (regfile[rs2] as u128)) >> 64) as u64,
+                            // DIV
+                            0b100 => regfile[rd] = ((regfile[rs1] as i64) / (regfile[rs2] as i64)) as u64,
+                            // DIVU
+                            0b101 => regfile[rd] = regfile[rs1] / regfile[rs2],
+                            // REM
+                            0b110 => regfile[rd] = ((regfile[rs1] as i64) % (regfile[rs2] as i64)) as u64,
+                            // REMU
+                            0b111 => regfile[rd] = regfile[rs1] % regfile[rs2],
+                            _ => {},
+                        }
+                    },
                     _ => {},
                 }
             },
