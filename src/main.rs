@@ -263,25 +263,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 rs1     = (instr as usize >> 15) & 0b11111;
                 rs2     = (instr as usize >> 20) & 0b11111;
                 funct3  = (instr >> 12) & 0b111;
-                match funct3 {
-                    // ADDW
-                    0b000 => {
-                        match instr >> 25 {
+                funct7  = (instr >> 25) & 0x7f;
+                match funct7 {
+                    0b0000000 => {
+                        match funct3 {
                             // ADDW
-                            0b0000000 => regfile[rd] = (((regfile[rs1] + regfile[rs2]) as i32) as i64) as u64,
-                            // SUBW
-                            0b0100000 => regfile[rd] = (((regfile[rs1] - regfile[rs2]) as i32) as i64) as u64,
+                            0b000 => regfile[rd] = (((regfile[rs1] + regfile[rs2]) as i32) as i64) as u64,
+                            // SLLW
+                            0b001 => regfile[rd] = ((regfile[rs1] as u32) << (regfile[rs2] as u32)) as u64,
+                            // SRLW
+                            0b101 => regfile[rd] = ((regfile[rs1] as u32) >> (regfile[rs2] as u32)) as u64, 
                             _ => {},
                         }
                     },
-                    // SLLW
-                    0b001 => regfile[rd] = ((regfile[rs1] as u32) << (regfile[rs2] as u32)) as u64,
-                    0b101 => {
-                        match instr >> 25 {
-                            // SRLW
-                            0b0000000 => regfile[rd] = ((regfile[rs1] as u32) >> (regfile[rs2] as u32)) as u64, 
+                    0b0100000 => {
+                        match funct3 {
+                            // SUBW
+                            0b000 => regfile[rd] = (((regfile[rs1] - regfile[rs2]) as i32) as i64) as u64,
                             // SRAW
-                            0b0100000 => regfile[rd] = ((regfile[rs1] as i32) >> (regfile[rs2] as i32)) as u64,
+                            0b101 => regfile[rd] = ((regfile[rs1] as i32) >> (regfile[rs2] as i32)) as u64,
+                            _ => {},
+                        }
+                    },
+                    0b0000001 => {
+                        match funct3 {
+                            // MULW
+                            0b000 => regfile[rd] = (((regfile[rs1] as i32) * (regfile[rs2] as i32)) as i64) as u64,
+                            // DIVW
+                            0b100 => regfile[rd] = (((regfile[rs1] as i32) / (regfile[rs2] as i32)) as i64) as u64,
+                            // DIVUW
+                            0b101 => regfile[rd] = ((((regfile[rs1] as u32) / (regfile[rs2] as u32)) as i32) as i64) as u64,
+                            // REMW
+                            0b110 => regfile[rd] = (((regfile[rs1] as i32) % (regfile[rs2] as i32)) as i64) as u64,
+                            // REMUW
+                            0b111 => regfile[rd] = ((((regfile[rs1] as u32) % (regfile[rs2] as u32)) as i32) as i64) as u64,
                             _ => {},
                         }
                     },
