@@ -267,6 +267,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             // BRANCH
             0b11_000_11 => {
+                rs1     = (instr as usize >> 15) & 0b11111;
+                rs2     = (instr as usize >> 20) & 0b11111;
+                funct3  = (instr >> 12) & 0b111;
+                imm     = ((instr as i64 & 0xf00) >> 7) | ((instr as i64 & 0x80) << 4) | ((instr as i64 & 0x7e00_0000) >> 20) | ((((instr as i32) & 0x8000_000) >> 19) as i64);
+                match funct3 {
+                    // BEQ
+                    0b000 => {
+                        if regfile[rs1] == regfile[rs2] {
+                            pc = pc + imm as usize;
+                        }
+                    },
+                    // BNE
+                    0b001 => {
+                        if regfile[rs1] != regfile[rs2] {
+                            pc = pc + imm as usize;
+                        }
+                    },
+                    // BLT
+                    0b100 => {
+                        if (regfile[rs1] as i64) < (regfile[rs2] as i64) {
+                            pc = pc + imm as usize;
+                        }
+                    },
+                    // BGE
+                    0b101 => {
+                        if (regfile[rs1] as i64) >= (regfile[rs2] as i64) {
+                            pc = pc + imm as usize;
+                        }
+                    },
+                    // BLTU
+                    0b110 => {
+                        if regfile[rs1] < regfile[rs2] {
+                            pc = pc + imm as usize;
+                        }
+                    },
+                    // BGEU
+                    0b111 => {
+                        if regfile[rs1] >= regfile[rs2] {
+                            pc = pc + imm as usize;
+                        }
+                    },
+                    _ => {},
+                }
             },
             // JALR
             0b11_001_11 => {
@@ -283,7 +326,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // JAL
             0b11_011_11 => {
                 rd      = (instr as usize >> 7) & 0b11111;
-                imm     = ((instr & 0xff000) as i32 | ((instr & 0x100000) >> 9) as i32 | ((instr & 0x7fe00000) >> 20) as i32 | (((instr & 0x80000000) as i32) >> 12)) as i64;
+                imm     = ((instr & 0xff000) as i32 | ((instr & 0x100000) >> 9) as i32 | ((instr & 0x7fe00000) >> 20) as i32 | (((instr & 0x80000000) as i32) >> 12)) as i64; //怪しい
                 regfile[rd] = pc as u64 + 4;
                 pc = (pc as i64 + imm) as usize;
             },
